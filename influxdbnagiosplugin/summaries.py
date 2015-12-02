@@ -3,6 +3,12 @@ Nagios Plugin summaries.
 """
 from nagiosplugin import Summary
 
+from influxdbnagiosplugin.resources import VALUES
+
+
+def is_values(result):
+    return result.metric.name == VALUES
+
 
 class MeasurementValuesSummary(Summary):
     """
@@ -12,8 +18,8 @@ class MeasurementValuesSummary(Summary):
         self.measurement = measurement
 
     def ok(self, results):
+        result = filter(is_values, results)[0]
         return "{} is {}".format(
             self.measurement,
-            # XXX select by name
-            results[2].metric.value,
+            result.metric.value,
         )
