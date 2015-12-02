@@ -12,13 +12,10 @@ from influxdbnagiosplugin.resources import COUNT, MEAN, Measurements
 from influxdbnagiosplugin.summaries import MeasurementValuesSummary
 
 
-def parse_args():
+def add_nagios_args(parser):
     """
-    Parse arguments.
+    Specify arguments encouraged by Nagios.
     """
-    parser = ArgumentParser()
-
-    # Nagios encourages verbosity controls for debugging
     parser.add_argument(
         "--verbose",
         "-v",
@@ -26,7 +23,11 @@ def parse_args():
         default=0,
     )
 
-    # Specify the thequery arguments
+
+def add_query_args(parser):
+    """
+    Specify arguments used to construct InfluxDB query.
+    """
     parser.add_argument(
         "--hostname",
         required=True,
@@ -43,7 +44,11 @@ def parse_args():
         help="InfluxDB measurement age",
     )
 
-    # Specify the connection arguments
+
+def add_influxdb_args(parser):
+    """
+    Add arguments to connect to InfluxDB.
+    """
     parser.add_argument(
         "--influxdb-hostname",
         default="localhost",
@@ -70,7 +75,11 @@ def parse_args():
         help="InfluxDB database name",
     )
 
-    # Specify the error and warning ranges
+
+def add_range_args(parser):
+    """
+    Add arguments for measurement range validation.
+    """
     parser.add_argument(
         "--count-error-range",
         default="1:",
@@ -81,7 +90,6 @@ def parse_args():
         default="2:",
         help="Range of measurement counts that are NOT considered a warning",
     )
-
     parser.add_argument(
         "--mean-error-range",
         default="",
@@ -92,6 +100,18 @@ def parse_args():
         default="",
         help="Range of measurement counts that are NOT considered a warning",
     )
+
+
+def parse_args():
+    """
+    Parse arguments.
+    """
+    parser = ArgumentParser()
+
+    add_nagios_args(parser)
+    add_query_args(parser)
+    add_influxdb_args(parser)
+    add_range_args(parser)
 
     args = parser.parse_args()
     return args
@@ -119,4 +139,3 @@ def main():
         )
     )
     check.main(args.verbose)
-
