@@ -4,3 +4,11 @@ python:
 sudo: false
 install: pip install .
 script: python setup.py nosetests
+deploy:
+  provider: pypi
+  user: jessemyers
+  password:
+    secure: THgfg4xmjL9nMFLKEssjKUXqX+qr+80j0Ytz3j+BlJB06JZeocsKLQ4ZLG3p+wrfKLzZczew+aDBcdLTAVreIE/RooUfQTxl/NdKltL72oGPbCCniMoakgYkdtvSLPKgGA4VFG8hR+CfOlQfgBKojtOZ8g7Bj9tc8cd3OTjVZCZriRAiA6lOFr2BAQv68aoqmEAUXQSD7QrguR6eQ8afPL+vK3Zwr7VmK+1v89QX264WaK0OdlGhTyzLO8HqCSNINgkacuMxolN/1cJIuVenRmGedKJw7B8rnh+8fMz1i7iV0gSbRKKber/ZAuSuvClZwSnyp1gZAD3TZyJpbvFlIqzsSQ014TSGALXPRxBCDUYP5z00/d/rHi9AtB3gxx3GswJTunxFk/acLvcwm2nit+mdEs6nvVAY3suQQeLEMr9Me9LF4woVWBsqcYjkLvMFzojh7bpJBp+RxhepY7myf9fdB9TKenRxj/7G7D1aPd7fs0tr019itBrDTIjhINLwNRCfEKy+904FAxcD9v5RJKMmpm+Sz0qcQFTTPvudlEF5UVZPuO0Hl24jFPQMnJ1KePefJ7wTcjy8a/eUKk7zB/eP97Wxg/2Y+JTkRZBxKJw+AM3c4kHYxB6gRVxqq0MTfNtg5UFwPZ98ZP/KNx7JCmZsxgKxvyhKEV7r+Y/tz04=
+  on:
+    tags: true
+    repo: locationlabs/influxdb-nagios-plugin
