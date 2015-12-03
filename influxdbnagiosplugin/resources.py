@@ -24,6 +24,7 @@ class Measurements(Resource):
                  hostname,
                  measurement,
                  age,
+                 extra_where_clauses,
                  influxdb_hostname,
                  influxdb_port,
                  influxdb_username,
@@ -32,6 +33,7 @@ class Measurements(Resource):
         self.hostname = hostname
         self.measurement = measurement
         self.age = age
+        self.extra_where_clauses = extra_where_clauses or []
         self.influxdb_hostname = influxdb_hostname
         self.influxdb_port = influxdb_port
         self.influxdb_username = influxdb_username
@@ -40,14 +42,28 @@ class Measurements(Resource):
         self.logger = getLogger('nagiosplugin')
 
     @property
+    def fields(self):
+        """
+        Generate the InfluxDB query fields.
+        """
+        return ["time", "value"]
+
+    @property
+    def clauses(self):
+        return [
+            "time > now() - {}".format(self.age),
+            "host = '{}'".format(self.hostname)
+        ] + self.extra_where_clauses
+
+    @property
     def query(self):
         """
         Create the InfluxDB query.
         """
-        return "SELECT time, value FROM {} WHERE time > now() - {} AND host = '{}'".format(
+        return "SELECT {} FROM {} WHERE {}".format(
+            ", ".join(self.fields),
             self.measurement,
-            self.age,
-            self.hostname,
+            " AND ".join(self.clauses),
         )
 
     def get_measurements(self):
@@ -80,8 +96,14 @@ class Measurements(Resource):
         """
         Query InfluxDB; yield the count and mean of the measurements.
         """
-        measurements = self.get_measurements()
-        values = [measurement["value"] for measurement in measurements]
+        measurements = [
+            {
+                field: measurement[field]
+                for field in self.fields
+            }
+            for measurement in self.get_measurements()
+        ]
+        values = [measurement["value"] for mesaurement in measurements]
 
         count = len(measurements)
         total = float(sum(values))

@@ -5,6 +5,7 @@ InfluxDB Nagios Plugin
 Uses the excellent [nagiosplugin](https://pythonhosted.org/nagiosplugin/) project to create
 measurement-based Nagios checks using [InfluxDB](https://influxdb.com/).
 
+[![Build Status](https://travis-ci.org/locationlabs/influxdb-nagios-plugin.png)](https://travis-ci.org/locationlabs/influxdb-nagios-plugin)
 
 ## Queries
 
@@ -33,14 +34,14 @@ The basic usage specifies arguments used to construct and execute an InfluxDB qu
 validate the resulting measurements are in range:
 
     check-measurement \
-	  --measurement <measurement> \
-	  --hostname <monitored_hostname> \
-	  --age <age> \
+      --measurement <measurement> \
+      --hostname <monitored_hostname> \
+      --age <age> \
       --influxdb-hostname <hostname> \
       --influxdb-port <port> \
-	  --influxdb-username <username> \
-	  --influxdb-password <password> \
-	  --influxdb-database <database>
+      --influxdb-username <username> \
+      --influxdb-password <password> \
+      --influxdb-database <database>
       --count-error-range <error_range> \
       --count-warning-range <warning_range> \
       --mean-error-range <error_range> \
