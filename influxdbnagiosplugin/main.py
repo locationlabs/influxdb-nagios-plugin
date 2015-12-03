@@ -43,6 +43,11 @@ def add_query_args(parser):
         default="30s",
         help="InfluxDB measurement age",
     )
+    parser.add_argument(
+        "--where",
+        action="append",
+        help="Extra where conditions to include.",
+    )
 
 
 def add_influxdb_args(parser):
@@ -126,6 +131,7 @@ def main():
             hostname=args.hostname,
             measurement=args.measurement,
             age=args.age,
+            extra_where_clauses=args.where,
             influxdb_hostname=args.influxdb_hostname,
             influxdb_port=args.influxdb_port,
             influxdb_username=args.influxdb_username,

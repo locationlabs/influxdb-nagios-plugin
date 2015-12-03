@@ -33,14 +33,14 @@ The basic usage specifies arguments used to construct and execute an InfluxDB qu
 validate the resulting measurements are in range:
 
     check-measurement \
-	  --measurement <measurement> \
-	  --hostname <monitored_hostname> \
-	  --age <age> \
+      --measurement <measurement> \
+      --hostname <monitored_hostname> \
+      --age <age> \
       --influxdb-hostname <hostname> \
       --influxdb-port <port> \
-	  --influxdb-username <username> \
-	  --influxdb-password <password> \
-	  --influxdb-database <database>
+      --influxdb-username <username> \
+      --influxdb-password <password> \
+      --influxdb-database <database>
       --count-error-range <error_range> \
       --count-warning-range <warning_range> \
       --mean-error-range <error_range> \
