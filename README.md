@@ -5,6 +5,7 @@ InfluxDB Nagios Plugin
 Uses the excellent [nagiosplugin](https://pythonhosted.org/nagiosplugin/) project to create
 measurement-based Nagios checks using [InfluxDB](https://influxdb.com/).
 
+[![Build Status](https://travis-ci.org/locationlabs/influxdb-nagios-plugin.png)](https://travis-ci.org/locationlabs/influxdb-nagios-plugin)
 
 ## Queries
 
