@@ -16,6 +16,7 @@ setup(
         "nose>=1.3.7"
     ],
     install_requires=[
+        "click>=6.2",
         "influxdb>=2.10.0",
         "nagiosplugin>=1.2.3",
     ],

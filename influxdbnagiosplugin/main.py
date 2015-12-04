@@ -1,147 +1,90 @@
 """
 Command line entry point.
 """
-from argparse import ArgumentParser
+from click import argument, group, option
+from influxdb import InfluxDBClient
 from nagiosplugin import (
     Check,
     guarded,
     ScalarContext,
 )
 
-from influxdbnagiosplugin.query import QueryBuilder
+from influxdbnagiosplugin.query import ExplicitQueryBuilder, SingleMeasurementQueryBuilder
 from influxdbnagiosplugin.resources import COUNT, MEAN, Measurements
 from influxdbnagiosplugin.summaries import MeasurementValuesSummary
 
 
-def add_nagios_args(parser):
+@group(chain=True)
+@option("-v", "--verbose", count=True)
+@option("--hostname", default="localhost", help="InfluxDB hostname")
+@option("--port", default=8086, help="InfluxDB port")
+@option("--username", default="influxdb", help="InfluxDB usernanme")
+@option("--password", default="secret", help="InfluxDB password")
+@option("--database", default="telegraf", help="InfluxDB database name")
+@option("--count-error-range", default="1:", help="Range of measurement counts that are NOT considered an error")  # noqa
+@option("--count-warning-range", default="2:", help="Range of measurement counts that are NOT considered a warning")  # noqa
+@option("--mean-error-range", default="", help="Range of measurement means that are NOT considered an error")  # noqa
+@option("--mean-warning-range", default="", help="Range of measurement counts that are NOT considered a warning")  # noqa
+def main(**kwargs):
     """
-    Specify arguments encouraged by Nagios.
+    Command line entry point. Defines common arguments.
     """
-    parser.add_argument(
-        "--verbose",
-        "-v",
-        action="count",
-        default=0,
-    )
+    pass
 
 
-def add_query_args(parser):
-    """
-    Specify arguments used to construct InfluxDB query.
-    """
-    parser.add_argument(
-        "--hostname",
-        required=True,
-        help="Monitored hostname",
-    )
-    parser.add_argument(
-        "--measurement",
-        required=True,
-        help="InfluxDB measurement name",
-    )
-    parser.add_argument(
-        "--age",
-        default="30s",
-        help="InfluxDB measurement age",
-    )
-    parser.add_argument(
-        "--where",
-        action="append",
-        help="Extra where conditions to include.",
-    )
-
-
-def add_influxdb_args(parser):
-    """
-    Add arguments to connect to InfluxDB.
-    """
-    parser.add_argument(
-        "--influxdb-hostname",
-        default="localhost",
-        help="InfluxDB hostname",
-    )
-    parser.add_argument(
-        "--influxdb-port",
-        default=8086,
-        help="InfluxDB port",
-    )
-    parser.add_argument(
-        "--influxdb-username",
-        default="influxdb",
-        help="InfluxDB usernanme",
-    )
-    parser.add_argument(
-        "--influxdb-password",
-        default="secret",
-        help="InfluxDB password",
-    )
-    parser.add_argument(
-        "--influxdb-database",
-        default="telegraf",
-        help="InfluxDB database name",
-    )
-
-
-def add_range_args(parser):
-    """
-    Add arguments for measurement range validation.
-    """
-    parser.add_argument(
-        "--count-error-range",
-        default="1:",
-        help="Range of measurement counts that are NOT considered an error",
-    )
-    parser.add_argument(
-        "--count-warning-range",
-        default="2:",
-        help="Range of measurement counts that are NOT considered a warning",
-    )
-    parser.add_argument(
-        "--mean-error-range",
-        default="",
-        help="Range of measurement means that are NOT considered an error",
-    )
-    parser.add_argument(
-        "--mean-warning-range",
-        default="",
-        help="Range of measurement counts that are NOT considered a warning",
-    )
-
-
-def parse_args():
-    """
-    Parse arguments.
-    """
-    parser = ArgumentParser()
-
-    add_nagios_args(parser)
-    add_query_args(parser)
-    add_influxdb_args(parser)
-    add_range_args(parser)
-
-    args = parser.parse_args()
-    return args
-
-
+@main.resultcallback()
 @guarded
-def main():
-    args = parse_args()
+def check(processors, **args):
+    """
+    Invoke the InfluxDB check using the Nagios plugin framework.
 
-    query = QueryBuilder.from_args(args).query
+    Reads the query from the processors chain.
+    """
+    query = processors[0]()
+
+    client = InfluxDBClient(
+        host=args["hostname"],
+        port=args["port"],
+        username=args["username"],
+        password=args["password"],
+        database=args["database"],
+    )
 
     check = Check(
         Measurements(
             query=query,
-            influxdb_hostname=args.influxdb_hostname,
-            influxdb_port=args.influxdb_port,
-            influxdb_username=args.influxdb_username,
-            influxdb_password=args.influxdb_password,
-            influxdb_database=args.influxdb_database,
+            client=client,
         ),
-        ScalarContext(COUNT, args.count_warning_range, args.count_error_range),
-        ScalarContext(MEAN, args.mean_warning_range, args.mean_error_range),
+        ScalarContext(COUNT, args["count_warning_range"], args["count_error_range"]),
+        ScalarContext(MEAN, args["mean_warning_range"], args["mean_error_range"]),
         MeasurementValuesSummary(
-            measurement=args.measurement,
+            query=query,
         )
     )
-    check.main(args.verbose)
+    check.main(args["verbose"])
+
+
+@main.command()
+@argument("query")
+def query(query):
+    """
+    Run an explicit query.
+    """
+    return ExplicitQueryBuilder(query)
+
+
+@main.command()
+@argument("measurement")
+@argument("hostname")
+@option("--age", default="30s")
+@option("--where", multiple=True, help="Extra where conditions to include.")
+def single(measurement, hostname, age, where):
+    """
+    Run a query for a single measurement.
+    """
+    return SingleMeasurementQueryBuilder.for_hostname_and_age(
+        measurement=measurement,
+        hostname=hostname,
+        age=age,
+        where=where,
+    )

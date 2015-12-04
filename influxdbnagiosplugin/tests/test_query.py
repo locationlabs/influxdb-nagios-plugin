@@ -1,34 +1,57 @@
 """
 Query construction tests.
 """
-from argparse import Namespace
-
 from hamcrest import assert_that, is_, equal_to
 
-from influxdbnagiosplugin.query import QueryBuilder
+from influxdbnagiosplugin.query import ExplicitQueryBuilder, SingleMeasurementQueryBuilder
 
 
-def test_query():
-    args = Namespace(
-        age="30s",
-        where=None,
-        hostname="hostname",
-        measurement="cpu_usage_idle",
-    )
-    query = QueryBuilder.from_args(args).query
-    assert_that(query, is_(equal_to(
-        "SELECT time, value FROM cpu_usage_idle WHERE time > now() - 30s AND host = 'hostname'"
+def test_explicit_query():
+    query = ExplicitQueryBuilder("SHOW MEASUREMENTS")
+    assert_that(query().query, is_(equal_to(
+        "SHOW MEASUREMENTS"
     )))
 
 
-def test_query_wherec_lause():
-    args = Namespace(
+def test_single_measurement_query():
+    query = SingleMeasurementQueryBuilder.for_hostname_and_age(
+        measurement="disk_free",
+        hostname="hostname",
+        age="30s",
+        where=[],
+    )
+    assert_that(query().query, is_(equal_to(
+        "SELECT time, value FROM disk_free"
+        " WHERE time > now() - 30s"
+        " AND host = 'hostname'"
+    )))
+
+
+def test_single_measurement_query_where_clause():
+    query = SingleMeasurementQueryBuilder.for_hostname_and_age(
+        measurement="disk_free",
+        hostname="hostname",
         age="30s",
         where=["path=/"],
-        hostname="hostname",
-        measurement="disk_free",
     )
-    query = QueryBuilder.from_args(args).query
-    assert_that(query, is_(equal_to(
-        "SELECT time, value FROM disk_free WHERE time > now() - 30s AND host = 'hostname' AND path = '/'"
+    assert_that(query().query, is_(equal_to(
+        "SELECT time, value FROM disk_free"
+        " WHERE time > now() - 30s"
+        " AND host = 'hostname'"
+        " AND path = '/'"
+    )))
+
+
+def test_single_measurement_query_where_clause_quoted():
+    query = SingleMeasurementQueryBuilder.for_hostname_and_age(
+        measurement="disk_free",
+        hostname="hostname",
+        age="30s",
+        where=["path='/'"],
+    )
+    assert_that(query().query, is_(equal_to(
+        "SELECT time, value FROM disk_free"
+        " WHERE time > now() - 30s"
+        " AND host = 'hostname'"
+        " AND path = '/'"
     )))

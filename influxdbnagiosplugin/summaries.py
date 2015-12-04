@@ -14,12 +14,12 @@ class MeasurementValuesSummary(Summary):
     """
     Customize the success result to show all measurement values.
     """
-    def __init__(self, measurement):
-        self.measurement = measurement
+    def __init__(self, query):
+        self.query = query
 
     def ok(self, results):
         result = filter(is_values, results)[0]
         return "{} is {}".format(
-            self.measurement,
+            self.query.measurements[0] if self.query.measurements else "result",
             result.metric.value,
         )

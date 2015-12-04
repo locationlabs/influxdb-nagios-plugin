@@ -1,58 +1,130 @@
 """
 InfluxDB query building.
 """
+from abc import ABCMeta, abstractmethod
+from logging import getLogger
+
+from six import add_metaclass
 
 
+DEFAULT_FIELDS = [
+    "time",
+    "value",
+]
+
+
+def maybe_quote(value):
+    """
+    Quote a value for InfluxDB if necessary.
+    """
+    if value[0] == "'" and value[-1] == "'":
+        return value
+    return "'{}'".format(value)
+
+
+def kv_condition(key, value):
+    """
+    Generate a key value equality condition.
+
+    Ensure that the value is properly quoted.
+    """
+    return "{} = {}".format(key, maybe_quote(value))
+
+
+def age_condition(age):
+    return "time > now() - {}".format(age)
+
+
+def host_condition(hostname):
+    return kv_condition("host", hostname)
+
+
+def kv_conditions(conditions):
+    return [
+        kv_condition(*condition.split("=", 1))
+        for condition in conditions or []
+    ]
+
+
+class Query(object):
+    """
+    Query wrapper.
+    """
+    def __init__(self, query, measurements=None):
+        self.query = query
+        self.measurements = measurements or []
+        self.logger = getLogger('nagiosplugin')
+
+    def __str__(self):
+        return self.query
+
+    def get_results(self, client):
+        self.logger.debug("Querying InfluxDB at {}:{} with query: \"{}\"".format(
+            client._host,
+            client._port,
+            self.query,
+        ))
+        results = client.query(self.query)
+        self.logger.info("Received result set: {}".format(results))
+        return list(results.get_points())
+
+
+@add_metaclass(ABCMeta)
 class QueryBuilder(object):
     """
-    Construct an InfluxDB query.
+    Abstract callable that builds queries.
+    """
+    @abstractmethod
+    def __call__(self):
+        pass
+
+
+class ExplicitQueryBuilder(QueryBuilder):
+    """
+    Return the provided query.
+    """
+    def __init__(self, query):
+        self.query = query
+
+    def __call__(self):
+        return Query(
+            query=self.query,
+        )
+
+
+class SingleMeasurementQueryBuilder(QueryBuilder):
+    """
+    Build a simple InfluxDB query of the form:
+
+        SELECT <fields> FROM <measurement> WHERE <conditions>
     """
     def __init__(self,
-                 hostname,
-                 measurement,
-                 age,
-                 extra_where_clauses):
-        self.hostname = hostname
+                 fields=None,
+                 measurement=None,
+                 conditions=None):
+        self.fields = fields or ["time", "value"]
         self.measurement = measurement
-        self.age = age
-        self.extra_where_clauses = extra_where_clauses or []
+        self.conditions = conditions or []
 
-    @property
-    def fields(self):
-        """
-        Generate the InfluxDB query fields.
-        """
-        return ["time", "value"]
-
-    @property
-    def clauses(self):
-        return [
-            "time > now() - {}".format(self.age),
-            "host = '{}'".format(self.hostname)
-        ] + [
-            "{} = '{}'".format(
-                clause.split('=', 1)[0],
-                clause.split('=', 1)[1],
-            )
-            for clause in self.extra_where_clauses
-        ]
-
-    @property
-    def query(self):
-        """
-        Create the InfluxDB query.
-        """
-        return "SELECT {} FROM {} WHERE {}".format(
-            ", ".join(self.fields),
-            self.measurement,
-            " AND ".join(self.clauses),
+    def __call__(self):
+        return Query(
+            query="SELECT {} FROM {} WHERE {}".format(
+                ", ".join(self.fields),
+                self.measurement,
+                " AND ".join(self.conditions),
+            ),
+            measurements=[
+                self.measurement,
+            ],
         )
 
     @classmethod
-    def from_args(cls, args):
+    def for_hostname_and_age(cls, measurement, age, hostname, where):
         return cls(
-            hostname=args.hostname,
-            measurement=args.measurement,
-            age=args.age,
-            extra_where_clauses=args.where,
+            fields=DEFAULT_FIELDS,
+            measurement=measurement,
+            conditions=[
+                age_condition(age),
+                host_condition(hostname),
+            ] + kv_conditions(where),
         )
