@@ -8,6 +8,7 @@ from nagiosplugin import (
     ScalarContext,
 )
 
+from influxdbnagiosplugin.query import QueryBuilder
 from influxdbnagiosplugin.resources import COUNT, MEAN, Measurements
 from influxdbnagiosplugin.summaries import MeasurementValuesSummary
 
@@ -126,12 +127,11 @@ def parse_args():
 def main():
     args = parse_args()
 
+    query = QueryBuilder.from_args(args).query
+
     check = Check(
         Measurements(
-            hostname=args.hostname,
-            measurement=args.measurement,
-            age=args.age,
-            extra_where_clauses=args.where,
+            query=query,
             influxdb_hostname=args.influxdb_hostname,
             influxdb_port=args.influxdb_port,
             influxdb_username=args.influxdb_username,

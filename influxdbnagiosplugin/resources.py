@@ -21,50 +21,19 @@ class Measurements(Resource):
     Count and mean metrics for a simple InfluxDB measurement query.
     """
     def __init__(self,
-                 hostname,
-                 measurement,
-                 age,
-                 extra_where_clauses,
+                 query,
                  influxdb_hostname,
                  influxdb_port,
                  influxdb_username,
                  influxdb_password,
                  influxdb_database):
-        self.hostname = hostname
-        self.measurement = measurement
-        self.age = age
-        self.extra_where_clauses = extra_where_clauses or []
+        self.query = query
         self.influxdb_hostname = influxdb_hostname
         self.influxdb_port = influxdb_port
         self.influxdb_username = influxdb_username
         self.influxdb_password = influxdb_password
         self.influxdb_database = influxdb_database
         self.logger = getLogger('nagiosplugin')
-
-    @property
-    def fields(self):
-        """
-        Generate the InfluxDB query fields.
-        """
-        return ["time", "value"]
-
-    @property
-    def clauses(self):
-        return [
-            "time > now() - {}".format(self.age),
-            "host = '{}'".format(self.hostname)
-        ] + self.extra_where_clauses
-
-    @property
-    def query(self):
-        """
-        Create the InfluxDB query.
-        """
-        return "SELECT {} FROM {} WHERE {}".format(
-            ", ".join(self.fields),
-            self.measurement,
-            " AND ".join(self.clauses),
-        )
 
     def get_measurements(self):
         """
