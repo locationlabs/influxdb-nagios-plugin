@@ -23,6 +23,10 @@ This model works well with [Telegraf](https://github.com/influxdb/telegraf) in w
 hosts will emit specific measurements regularly. Many of the plugin's defaults are optimized
 for this use case.
 
+In 0.10.x, Telegraf changed their model from having point measurements (time, value) to
+to collections (time, value, value2).  That is, previously there would be mulitple series such as
+`cpu_usage_nice` and `cpu_usage_system`, each containing only (time, value) pairs.  In new
+model, the series cpu would contain (time, `usage_nice`, `usage_system`).
 
 ## Installation
 
@@ -33,12 +37,46 @@ Use pip:
 
 ## Usage
 
-The basic usage for the `single` sub-command is:
+	Usage: check-measurement [OPTIONS] COMMAND1 [ARGS]...
 
-    check-measurement \
-      --hostname <influxdb-hostname> \
-      --username <influxdb-username> \
-      --password <influxdb-password> \
-	  single <measurement> <monitored_hostname>
+	Command line entry point. Defines common arguments.
 
-A number of other arguments are supported.
+	Options:
+	  -v, --verbose
+	  --hostname TEXT             InfluxDB hostname
+	  --port INTEGER              InfluxDB port
+	  --username TEXT             InfluxDB usernanme
+	  --password TEXT             InfluxDB password
+	  --database TEXT             InfluxDB database name
+	  --count-error-range TEXT    Range of measurement counts that are NOT
+								  considered an error
+	  --count-warning-range TEXT  Range of measurement counts that are NOT
+								  considered a warning
+	  --mean-error-range TEXT     Range of measurement means that are NOT
+								  considered an error
+	  --mean-warning-range TEXT   Range of measurement counts that are NOT
+								  considered a warning
+	  --timeout INTEGER           Timeout in seconds for connecting to InfluxDB
+	  --help                      Show this message and exit.
+
+	Commands:
+	  query   Run an explicit query.
+	  single  Run a query for a single measurement.
+
+	check-measurement [OPTIONS] single [OPTIONS] MEASUREMENT HOSTNAME
+
+	  Run a query for a single measurement.
+
+	Options:
+	  --age TEXT
+	  --where TEXT  Extra where conditions to include.
+	  --field TEXT
+	  --help        Show this message and exit.
+
+
+	Usage: check-measurement query [OPTIONS] QUERY
+
+	  Run an explicit query.
+
+	Options:
+	  --help  Show this message and exit.
