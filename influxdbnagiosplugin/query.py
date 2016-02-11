@@ -119,9 +119,9 @@ class SingleMeasurementQueryBuilder(QueryBuilder):
         )
 
     @classmethod
-    def for_hostname_and_age(cls, measurement, age, hostname, where):
+    def for_hostname_and_age(cls, measurement, age, hostname, where, field=None):
         return cls(
-            fields=DEFAULT_FIELDS,
+            fields=["time", field] if field else DEFAULT_FIELDS,
             measurement=measurement,
             conditions=[
                 age_condition(age),

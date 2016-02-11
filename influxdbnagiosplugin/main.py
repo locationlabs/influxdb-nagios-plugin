@@ -51,7 +51,6 @@ def check(processors, **args):
         database=args["database"],
         timeout=args["timeout"],
     )
-
     check = Check(
         Measurements(
             query=query,
@@ -80,7 +79,8 @@ def query(query):
 @argument("hostname")
 @option("--age", default="30s")
 @option("--where", multiple=True, help="Extra where conditions to include.")
-def single(measurement, hostname, age, where):
+@option("--field", default=None, help="Name of metric to check on measurement series.")
+def single(measurement, hostname, age, where, field):
     """
     Run a query for a single measurement.
     """
@@ -89,4 +89,5 @@ def single(measurement, hostname, age, where):
         hostname=hostname,
         age=age,
         where=where,
+        field=field,
     )
